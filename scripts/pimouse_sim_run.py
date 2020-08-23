@@ -9,15 +9,16 @@ class pimouse_sim_run():
         rospy.Subscriber('/lightsensors', LightSensorValues, self.sensor_callback)
         self.data = LightSensorValues()
 
-    def sensor_callback(self, meg):
-        rospy.loginfo(type(self.data))
+    def sensor_callback(self, msg):
+        self.data = msg
 
 # -----
 
     def motion(self):
-        # self.rate.sleep()
-        rospy.loginfo(type(self.data))
-        rospy.loginfo(self.data)
+        print(self.data.right_forward)
+        print(self.data.right_side)
+        print(self.data.left_side)
+        print(self.data.left_forward)
 
 # -----
 
