@@ -5,7 +5,7 @@
   <!-- <include if="$(arg imu)" file="$(find rt_usb_9axis_sensor)/launch/rt_usb_9axis_sensor.launch" /> -->
   <!-- <include file="$(find pimouse_ros)/launch/pimouse.launch" /> -->
   <node pkg="pimouse_ros" name="lightsensors" type="lightsensors.py" required="true" />
-  <!-- <node pkg="pimouse_ros" name="motors" type="motors.py" required="true" /> -->
+  <node pkg="pimouse_ros" name="motors" type="motors.py" required="true" />
   <!-- <node pkg="raspimouse_ros_2" name="buzzer" type="buzzer.py" required="true" /> -->
 
   <!-- <node pkg="raspimouse_ros_2" name="lightsensors" type="lightsensors" required="true">

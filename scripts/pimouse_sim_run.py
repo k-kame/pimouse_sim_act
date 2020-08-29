@@ -8,9 +8,17 @@ class pimouse_sim_run():
     def __init__(self):
         rospy.Subscriber('/lightsensors', LightSensorValues, self.sensor_callback)
         self.data = LightSensorValues()
+        self.motor_pub = rospy.Publisher('/motor', MotorFreqs, queue_size = 10)
 
     def sensor_callback(self, msg):
         self.data = msg
+
+    def motor_cont(self, left_hz, right_hz):
+        if not rospy.is_shutdown():
+            d = MotorFreqs()
+            d.left_hz = left_hz
+            d.right_hz = right_hz
+            self.motor_pub.publish(d)
 
 # -----
 
@@ -19,6 +27,8 @@ class pimouse_sim_run():
         print(self.data.right_side)
         print(self.data.left_side)
         print(self.data.left_forward)
+        # def motortest(self):
+        self.motor_cont(-200, 200)
 
 # -----
 

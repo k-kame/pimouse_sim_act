@@ -1,4 +1,4 @@
-How to use
+How to use (simulation)
 
 1. rosrun raspimouse_control gen_dev_file.sh
 2. x server を立てておく
@@ -10,3 +10,11 @@ How to use
 -----
 
 5がポイント．実機用のpythonで書いたサブスクライバなので，7の制御プログラムがシミュレーションと実機で共通・・・になる気がする（未確認．さらに，もちろん実機用のlaunchを書かなければならない）
+
+-----
+
+How to use (actual machine) 予定
+
+1. roslaunch pimouse_sim_act raspimouse_act.launch
+rosservice call /motor_on ??? 必要？
+rosrun pimouse_sim_act pimouse_sim_run.py
