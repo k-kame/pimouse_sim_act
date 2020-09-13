@@ -1,3 +1,6 @@
+あとで Evernote に移す予定で書く
+
+-----
 How to use (simulation)
 
 1. rosrun raspimouse_control gen_dev_file.sh
@@ -12,7 +15,6 @@ How to use (simulation)
 5がポイント．実機用のpythonで書いたサブスクライバなので，7の制御プログラムがシミュレーションと実機で共通・・・になる気がする（未確認．さらに，もちろん実機用のlaunchを書かなければならない）
 
 -----
-
 How to use (actual machine) 予定
 
 1. roslaunch pimouse_sim_act raspimouse_act.launch
