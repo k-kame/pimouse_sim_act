@@ -33,7 +33,7 @@ class pimouse_sim_run():
 # -----
 
     def run(self):
-        self.rate = rospy.Rate(1)
+        self.rate = rospy.Rate(10)
         while not rospy.is_shutdown():
             self.motion()
             self.rate.sleep()
