@@ -3,16 +3,19 @@
 -----
 How to use (simulation)
 
-1. rosrun raspimouse_control gen_dev_file.sh
+1. バーチャルデバイスのドライバとROSの関連付け
+    rosrun raspimouse_control gen_dev_file.sh
 2. x server を立てておく
-3. roslaunch raspimouse_gazebo raspimouse_with_newmaze.launch
-4. cat /dev/rtlightsensor0 
-5. roslaunch pimouse_sim_act raspimouse_sim.launch
-6. rosservice call /motor_on
-7. rosrun pimouse_sim_act pimouse_sim_run.py
------
-
-5がポイント．実機用のpythonで書いたサブスクライバなので，7の制御プログラムがシミュレーションと実機で共通・・・になる気がする（未確認．さらに，もちろん実機用のlaunchを書かなければならない）
+3. シミュレータ起動（含バーチャルデバイスのノード起動）
+    roslaunch raspimouse_gazebo raspimouse_with_newmaze.launch
+4. センサ値受信チェック
+    cat /dev/rtlightsensor0 
+5. モータ通電
+    roslaunch raspimouse_ros_2 raspimouse.launch
+    rosservice call /motor_on
+7. 走行プログラム実行
+    rosrun raspimouse_sim_tutorial_program left_hand.py
+    x rosrun pimouse_sim_act pimouse_sim_run.py
 
 -----
 How to use (actual machine) 予定
@@ -20,3 +23,7 @@ How to use (actual machine) 予定
 1. roslaunch pimouse_sim_act raspimouse_act.launch
 rosservice call /motor_on ??? 必要？
 rosrun pimouse_sim_act pimouse_sim_run.py
+
+-----
+
+5がポイント．実機用のpythonで書いたサブスクライバなので，7の制御プログラムがシミュレーションと実機で共通・・・になる気がする（未確認．さらに，もちろん実機用のlaunchを書かなければならない）

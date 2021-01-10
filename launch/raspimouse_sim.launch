@@ -1,11 +1,12 @@
 <!-- original file: raspimouse_ros_2/launch/raspimouse.launch -->
 
 <launch>
+  <!-- for imu -->
   <!-- <arg name="imu" default="0" /> -->
   <!-- <include if="$(arg imu)" file="$(find rt_usb_9axis_sensor)/launch/rt_usb_9axis_sensor.launch" /> -->
+  
+  <!-- for real machine -->
   <!-- <include file="$(find pimouse_ros)/launch/pimouse.launch" /> -->
-  <node pkg="pimouse_ros" name="lightsensors" type="lightsensors.py" required="true" />
-  <node pkg="pimouse_ros" name="motors" type="motors.py" required="true" />
   <!-- <node pkg="raspimouse_ros_2" name="buzzer" type="buzzer.py" required="true" /> -->
 
   <!-- <node pkg="raspimouse_ros_2" name="lightsensors" type="lightsensors" required="true">
@@ -17,4 +18,8 @@
 
   <!-- <node pkg="raspimouse_ros_2" name="leds" type="leds" required="true" /> -->
   <!-- <node pkg="raspimouse_ros_2" name="buttons" type="buttons" required="true" /> -->
+
+  <!-- for simulation -->
+  <!-- <node pkg="raspimouse_sim_tutorial_program" name="LeftHand" type="left_hand.py" required="true" /> -->
+  <node pkg="pimouse_sim_act" name="LeftHand" type="left_hand.py" required="true" />
 </launch>
