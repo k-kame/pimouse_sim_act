@@ -160,11 +160,15 @@ class LeftHand():
             self.rate.sleep()
         # 以下メインループ
         while not rospy.is_shutdown():
-            self.motion()
+            if sim_act == 0:
+                self.motion()
+            
             self.rate.sleep()
 
 if __name__ == '__main__':
     # ノード初期化
     rospy.init_node('LeftHand')
+    # パラメータの取得（シミュ:0/実機:1）
+    sim_act = rospy.get_param("sim_act")
     # run 関数の呼び出し
     LeftHand().run()
