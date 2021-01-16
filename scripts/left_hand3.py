@@ -3,7 +3,7 @@
 
 # 変数 sim_act に関して（シミュ:0/実機:1）
 
-import rospy
+import rospy,math
 import numpy as np
 from geometry_msgs.msg import Twist
 from std_srvs.srv import Trigger, TriggerResponse, Empty
@@ -16,9 +16,13 @@ class LeftHand():
         rospy.Subscriber('/lightsensors', LightSensorValues, self.sensor_callback)
         # 光センサのメッセージオブジェクト
         self.sensor_values = LightSensorValues()
-        # （シミュ）モータに周波数を入力するためのパブリッシャー
+        # モータのパブリッシャー
         if sim_act == 0:
+            # （シミュ）モータに周波数を入力するパブリッシャ
             self.motor_raw_pub = rospy.Publisher('/motor_raw', MotorFreqs, queue_size = 10)
+        else:
+            # （実機）モータに速度を入力するパブリッシャ
+            self.cmd_vel = rospy.Publisher('/cmd_vel',Twist,queue_size=1)
 
         # （シミュ）実行時にシミュレータを初期状態にする
         if sim_act == 0:
@@ -39,6 +43,20 @@ class LeftHand():
             d.right_hz = right_hz
             # パブリッシュ
             self.motor_raw_pub.publish(d)
+
+    # （実機）周波数データをTwist型に変換
+    def freq2twist(self, left_hz, right_hz):
+        RADIUS = 24         # 車輪半径
+        TREAD  = 92         # 車輪間距離
+        RESOLUSION = 400    # 一回転ステップ数
+        data = Twist()
+        vR = 2*math.pi*RADIUS*right_hz/RESOLUSION
+        vL = 2*math.pi*RADIUS*left_hz/RESOLUSION
+        v  = (vR+vL)/2
+        th = math.atan((vR-vL)/TREAD)
+        data.linear.x  = v*math.sin(th)
+        data.linear.y  = v*math.cos(th)
+        data.angular.z = (vR-vL)/TREAD
 
     # メインループの中身と動作のための関数　＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
     def turn_move(self, m):
@@ -156,15 +174,27 @@ class LeftHand():
     def run(self):
         # 更新頻度の設定
         self.rate = rospy.Rate(10)
-        # シミュレーション環境の初期化
+        # シミュレーション環境／ハードウェアの初期化
         if sim_act == 0:
             self.init()
+        else:
+            # サービスが立ち上がるまでサービスコールをストップ
+            rospy.wait_for_service('/motor_on')
+            rospy.wait_for_service('/motor_off')
+
         # シャットダウンのためのフックを登録
         if sim_act == 0:
             rospy.on_shutdown(self.stopMove)
+        else:
+            rospy.on_shutdown(rospy.ServiceProxy('/motor_off',Trigger).call)
+
+        # /motor_on という名前でTrigger型のサービスを定義
+        if sim_act == 1:
+            rospy.ServiceProxy('/motor_on',Trigger).call()
+
         # 以下の条件により停止（必要？）
-        while self.sensor_values.left_side == 0 and self.sensor_values.right_side == 0:
-            self.rate.sleep()
+        # while self.sensor_values.left_side == 0 and self.sensor_values.right_side == 0:
+        #     self.rate.sleep()
         # 以下メインループ
         while not rospy.is_shutdown():
             self.motion()
