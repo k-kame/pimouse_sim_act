@@ -1,31 +1,36 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# 変数 sim_act に関して（シミュ:0/実機:1）
+
 import rospy
 import numpy as np
 from geometry_msgs.msg import Twist
 from std_srvs.srv import Trigger, TriggerResponse, Empty
+# ここ分岐できるか？＜実機もこのままで行けるかも？
 from raspimouse_ros_2.msg import *
 
 class LeftHand():
     def __init__(self):
         # 光センサのサブスクライバー
         rospy.Subscriber('/lightsensors', LightSensorValues, self.sensor_callback)
-        # モータに周波数を入力するためのパブリッシャー
-        self.motor_raw_pub = rospy.Publisher('/motor_raw', MotorFreqs, queue_size = 10)
         # 光センサのメッセージオブジェクト
         self.sensor_values = LightSensorValues()
+        # （シミュ）モータに周波数を入力するためのパブリッシャー
+        if sim_act == 0:
+            self.motor_raw_pub = rospy.Publisher('/motor_raw', MotorFreqs, queue_size = 10)
 
-        # 実行時にシミュレータを初期状態にする
-        self.modeSimReset = True
-        self.ls_count = 0
-        self.rs_count = 0
+        # （シミュ）実行時にシミュレータを初期状態にする
+        if sim_act == 0:
+            self.modeSimReset = True
+            self.ls_count = 0
+            self.rs_count = 0
 
     def sensor_callback(self, msg):
         # クラス変数のメッセージオブジェクトに受信したデータをセット
         self.sensor_values = msg
 
-    # メインループで計算した車輪の周波数データを MotorFreqs()型にまとめてパブリッシュ
+    # （シミュ）メインループで計算した車輪の周波数データを MotorFreqs()型にまとめてパブリッシュ
     def motor_cont(self, left_hz, right_hz):
         if not rospy.is_shutdown():
             d = MotorFreqs()
@@ -138,7 +143,7 @@ class LeftHand():
             self.moveFeedback(500, 500, 0.2, "RIGHT")
     # メインループの中身（ここまで）＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
 
-    # シミュレーション環境の初期化
+    # （シミュ）シミュレーション環境の初期化
     def init(self):
         if self.modeSimReset:
             rospy.wait_for_service('/gazebo/reset_world')
@@ -152,17 +157,17 @@ class LeftHand():
         # 更新頻度の設定
         self.rate = rospy.Rate(10)
         # シミュレーション環境の初期化
-        self.init()
+        if sim_act == 0:
+            self.init()
         # シャットダウンのためのフックを登録
-        rospy.on_shutdown(self.stopMove)
-        # 以下の条件により停止
+        if sim_act == 0:
+            rospy.on_shutdown(self.stopMove)
+        # 以下の条件により停止（必要？）
         while self.sensor_values.left_side == 0 and self.sensor_values.right_side == 0:
             self.rate.sleep()
         # 以下メインループ
         while not rospy.is_shutdown():
-            if sim_act == 0:
-                self.motion()
-            
+            self.motion()
             self.rate.sleep()
 
 if __name__ == '__main__':

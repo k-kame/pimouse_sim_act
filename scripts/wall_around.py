@@ -9,19 +9,20 @@
 import rospy,copy,math
 from geometry_msgs.msg import Twist
 from std_srvs.srv import Trigger, TriggerResponse
+# ここ分岐できるか？
 from pimouse_ros.msg import LightSensorValues
 
 class WallAround():
     def __init__(self):
         # 光センサのサブスクライバー
         rospy.Subscriber('/lightsensors', LightSensorValues, self.sensor_callback)
-        # モータに速度を入力するためのパブリッシャ（ここが違う）
-        self.cmd_vel = rospy.Publisher('/cmd_vel',Twist,queue_size=1)
         # 光センサのメッセージオブジェクト
         self.sensor_values = LightSensorValues()
+        # モータに速度を入力するためのパブリッシャ（ここが違う）
+        self.cmd_vel = rospy.Publisher('/cmd_vel',Twist,queue_size=1)
 
-    def sensor_callback(self,messages):
-        self.sensor_values = messages
+    def sensor_callback(self,msg):
+        self.sensor_values = msg
 
     # メインループの中身と動作のための関数　＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
     def wall_front(self,ls):
