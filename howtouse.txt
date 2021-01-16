@@ -14,7 +14,8 @@ How to use (simulation)
     roslaunch raspimouse_ros_2 raspimouse.launch
     rosservice call /motor_on
 7. 走行プログラム実行
-    rosrun raspimouse_sim_tutorial_program left_hand.py
+    roslaunch pimouse_sim_act raspimouse_sim.launch
+    x rosrun raspimouse_sim_tutorial_program left_hand.py
     x rosrun pimouse_sim_act pimouse_sim_run.py
 
 -----
