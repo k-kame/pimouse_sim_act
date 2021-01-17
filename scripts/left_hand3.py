@@ -10,6 +10,10 @@ from std_srvs.srv import Trigger, TriggerResponse, Empty
 # ここ分岐できるか？＜実機もこのままで行けるかも？
 from raspimouse_ros_2.msg import *
 
+P_1BLK = 477 # ロボットが１ブロック移動するためのパルス数
+P_QUAD = 192 # ロボットが90度旋回するためのパルス数
+S_TH   = 300 # 壁の有無を判断するための閾値
+
 class LeftHand():
     def __init__(self):
         # 光センサのサブスクライバー
@@ -44,121 +48,40 @@ class LeftHand():
             # パブリッシュ
             self.motor_raw_pub.publish(d)
 
-    # （実機）周波数データをTwist型に変換
-    def freq2twist(self, left_hz, right_hz):
-        RADIUS = 24         # 車輪半径
-        TREAD  = 92         # 車輪間距離
-        RESOLUSION = 400    # 一回転ステップ数
-        data = Twist()
-        vR = 2*math.pi*RADIUS*right_hz/RESOLUSION
-        vL = 2*math.pi*RADIUS*left_hz/RESOLUSION
-        v  = (vR+vL)/2
-        th = math.atan((vR-vL)/TREAD)
-        data.linear.x  = v*math.sin(th)
-        data.linear.y  = v*math.cos(th)
-        data.angular.z = (vR-vL)/TREAD
+    # # （実機）周波数データをTwist型に変換
+    # def freq2twist(self, left_hz, right_hz):
+    #     RADIUS = 24         # 車輪半径
+    #     TREAD  = 92         # 車輪間距離
+    #     RESOLUSION = 400    # 一回転ステップ数
+    #     data = Twist()
+    #     vR = 2*math.pi*RADIUS*right_hz/RESOLUSION
+    #     vL = 2*math.pi*RADIUS*left_hz/RESOLUSION
+    #     v  = (vR+vL)/2
+    #     th = math.atan((vR-vL)/TREAD)
+    #     data.linear.x  = v*math.sin(th)
+    #     data.linear.y  = v*math.cos(th)
+    #     data.angular.z = (vR-vL)/TREAD
 
     # メインループの中身と動作のための関数　＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
-    def turn_move(self, m):
-        if m == "LEFT": self.motor_cont(-200, 200)
-        if m == "RIGHT": self.motor_cont(200, -200)
-
-    def moveFeedback(self, offset, speed, k, mode):
-        # left_sideが2000より大きい時は、右回り旋回
-        if self.sensor_values.left_side > 1500:
-            self.turn_move("RIGHT")
-            return
-        
-        # right_sideが2000より大きい時は、右回り旋回
-        if self.sensor_values.right_side > 1500:
-            self.turn_move("LEFT")
-            return
-
-        # 壁沿いを追従走行するための計算
-        # (基準値 - 現在のleft_side) * ゲイン
-        if mode == "LEFT":
-            diff = (offset - self.sensor_values.left_side) * k
-            # 計算した値をモータに出力
-            self.motor_cont(speed - diff, speed + diff)
-        if mode == "RIGHT":
-            diff = (offset - self.sensor_values.right_side) * k
-            # 計算した値をモータに出力
-            self.motor_cont(speed + diff, speed - diff)
-
-    def stopMove(self):
-        # 終了時にモータを止める
+    # 停止
+    def move_stop(self):
         self.motor_cont(0, 0)
 
-    def checker(self):
-        # 壁無し判定
-        if self.sensor_values.left_side < 100:
-            print("--RS_COUNT:", self.sensor_values.left_side)
-            self.rs_count += 1
-        if self.sensor_values.right_side < 150:
-            print("--LS_COUNT:", self.sensor_values.right_side)
-            self.ls_count += 1
+    # １マス前進
+    def move_front(self):
+        self.motor_cont(P_1BLK, P_1BLK) 
 
+    # 右旋回
+    def move_turnright(self):
+        self.motor_cont(P_QUAD, -P_QUAD)
+
+    # 主関数
     def motion(self):
-        # 左側に壁がある確率が高くて、目の前に壁がなさそうなとき
-        if self.sensor_values.left_forward < 300 or self.sensor_values.right_forward < 300:
-            print("Move: STRAIGHT")
-            for time in range(12):
-                self.checker()
-                if self.sensor_values.left_side > self.sensor_values.right_side:
-                    self.moveFeedback(500, 500, 0.2, "LEFT")
-                else:
-                    self.moveFeedback(500, 500, 0.2, "RIGHT")
-                self.rate.sleep()
-            self.stopMove()
-            
-            # 目の前に壁がなくて、右側に壁がない場合
-            if self.sensor_values.left_forward < 300 or self.sensor_values.right_forward < 300:
-                if self.rs_count > 0:
-                    print("Move: MID LEFT TURN")
-                    for time in range(10):
-                        self.turn_move("LEFT")
-                        self.rate.sleep()
-                    self.stopMove()
-            # 直進した後に、目の前に壁があったとき
-            elif self.sensor_values.left_forward > 300 and self.sensor_values.right_forward > 300:
-                # 左右の壁がない場合
-                if self.ls_count > 0 and self.rs_count > 0:
-                    print("Move: LEFT TURN_2")
-                    for time in range(10):
-                        self.turn_move("LEFT")
-                        self.rate.sleep()
-                    self.stopMove()
-                # 右の壁がない場合
-                elif self.ls_count > 0:
-                    print("Move: RIGHT TURN")
-                    for time in range(10):
-                        self.turn_move("RIGHT")
-                        self.rate.sleep()
-                    self.stopMove()
-                # 左の壁がない場合
-                elif self.rs_count > 0:
-                    print("Move: LEFT TURN")
-                    for time in range(10):
-                        self.turn_move("LEFT")
-                        self.rate.sleep()
-                    self.stopMove()          
-            self.ls_count = 0
-            self.rs_count = 0
-            return
-        # 左右関係なく、目の前に壁があるとき
-        if self.sensor_values.left_forward > 2000 and self.sensor_values.right_forward > 2000:
-            print("Move: DEAD END")
-            for time in range(20):
-                self.turn_move("LEFT")
-                self.rate.sleep()
-            self.stopMove()
-            self.ls_count = 0
-            self.rs_count = 0
-            return
-        if self.sensor_values.left_side > self.sensor_values.right_side:
-            self.moveFeedback(500, 500, 0.2, "LEFT")
+        if self.sensor_values.left_forward < S_TH or self.sensor_values.right_forward < S_TH:
+            self.move_front()
         else:
-            self.moveFeedback(500, 500, 0.2, "RIGHT")
+            self.move_turnright()
+
     # メインループの中身（ここまで）＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
 
     # （シミュ）シミュレーション環境の初期化
@@ -173,7 +96,7 @@ class LeftHand():
         
     def run(self):
         # 更新頻度の設定
-        self.rate = rospy.Rate(10)
+        self.rate = rospy.Rate(1000)
         # シミュレーション環境／ハードウェアの初期化
         if sim_act == 0:
             self.init()
@@ -184,7 +107,7 @@ class LeftHand():
 
         # シャットダウンのためのフックを登録
         if sim_act == 0:
-            rospy.on_shutdown(self.stopMove)
+            rospy.on_shutdown(self.move_stop)
         else:
             rospy.on_shutdown(rospy.ServiceProxy('/motor_off',Trigger).call)
 
@@ -192,9 +115,6 @@ class LeftHand():
         if sim_act == 1:
             rospy.ServiceProxy('/motor_on',Trigger).call()
 
-        # 以下の条件により停止（必要？）
-        # while self.sensor_values.left_side == 0 and self.sensor_values.right_side == 0:
-        #     self.rate.sleep()
         # 以下メインループ
         while not rospy.is_shutdown():
             self.motion()
