@@ -24,4 +24,5 @@
   <!-- パラメータ設定（シミュ:0/実機:1） -->
   <param name="sim_act" value="0" />
   <node pkg="pimouse_sim_act" name="LeftHand" type="left_hand3.py" required="true" />
+  <!-- <node pkg="pimouse_sim_act" name="LeftHand" type="left_hand3.py" required="true" /> -->
 </launch>

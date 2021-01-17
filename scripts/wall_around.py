@@ -24,6 +24,7 @@ class WallAround():
         if sim_act == 1:
             self.cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
 
+    # センサコールバック関数
     def sensor_callback(self, msg):
         self.sensor_values = msg
 
@@ -44,14 +45,13 @@ class WallAround():
             self.motor_cont_a(0.0, -math.pi)
 
     # 環境設定のための関数　＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+    # ロボット初期化
     def init_robot(self):
-        # サービスが立ち上がるまでサービスコールをストップ
         rospy.wait_for_service('/motor_on')
         rospy.wait_for_service('/motor_off')
+        rospy.ServiceProxy('/motor_on',Trigger).call()
         # シャットダウンのためのフックを登録
         rospy.on_shutdown(rospy.ServiceProxy('/motor_off',Trigger).call)
-        # /motor_on という名前でTrigger型のサービスを定義
-        rospy.ServiceProxy('/motor_on',Trigger).call()
 
     # 主関数　＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
     def run(self):
