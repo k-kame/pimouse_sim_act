@@ -26,7 +26,7 @@ class LeftHand():
             self.motor_raw_pub = rospy.Publisher('/motor_raw', MotorFreqs, queue_size = 10)
         else:
             # （実機）モータに速度を入力するパブリッシャ
-            self.cmd_vel = rospy.Publisher('/cmd_vel',Twist,queue_size=1)
+            self.cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
 
         # （シミュ）実行時にシミュレータを初期状態にする
         if sim_act == 0:
