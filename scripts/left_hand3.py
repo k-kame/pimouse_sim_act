@@ -9,17 +9,21 @@ from raspimouse_ros_2.msg import *
 
 # 変数 sim_act に関して（シミュ:0/実機:1）
 
+# シミュと実機ごとの移動速度／センサ閾値設定用グローバル定数
 # シミュのための定数
-P_1BLK_SIM = 477 # ロボットが１ブロック移動するためのパルス数
-P_QUAD_SIM = 192 # ロボットが90度旋回するためのパルス数
-S_TH_SIM   = 300 # 壁の有無を判断するための閾値
+# P_1BLK_SIM = 477 # ロボットが１ブロック移動するためのパルス数
+# P_QUAD_SIM = 192 # ロボットが90度旋回するためのパルス数
+V_X_SIM  = 0.2
+Z_R_SIM  = -math.pi
+S_TH_SIM = 300 # 壁の有無を判断するための閾値
 # 実機のための定数
-S_TH_ACT = 100
-
+V_X_ACT  = 0.2
+Z_R_ACT  = -math.pi
+S_TH_ACT = 300
 # 参照される定数（編集しない）
-P_1BLK = 0
-P_QUAD = 0
-S_TH   = 0
+V_X  = 0
+Z_R  = 0
+S_TH = 0
 
 class LeftHand():
     def __init__(self):
@@ -27,20 +31,20 @@ class LeftHand():
         rospy.Subscriber('/lightsensors', LightSensorValues, self.sensor_callback)
         # 光センサのメッセージオブジェクト
         self.sensor_values = LightSensorValues()
-        # モータのパブリッシャー（シミュ（周波数）:0／実機（速度）:1）
-        if sim_act == 0:
-            self.motor_raw_pub = rospy.Publisher('/motor_raw', MotorFreqs, queue_size = 10)
-        else:
-            self.cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
+        # モータのパブリッシャー（シミュ（周波数）▶ 実機（x速度とz回転角に統一））
+        # self.motor_raw_pub = rospy.Publisher('/motor_raw', MotorFreqs, queue_size = 10)
+        self.cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
 
         # グローバル変数の再定義
         global P_1BLK, P_QUAD, S_TH
         if sim_act == 0:
-            P_1BLK = P_1BLK_SIM
-            P_QUAD = P_QUAD_SIM
-            S_TH   = S_TH_SIM
+            V_X  = V_X_SIM
+            Z_R  = Z_R_SIM
+            S_TH = S_TH_SIM
         else:
-            S_TH   = S_TH_ACT
+            V_X  = V_X_ACT
+            Z_R  = Z_R_ACT
+            S_TH = S_TH_ACT
 
         # （シミュ）シミュレータを初期状態にする
         if sim_act == 0:
@@ -52,14 +56,14 @@ class LeftHand():
     def sensor_callback(self, msg):
         self.sensor_values = msg
 
-    # （シミュ）モーターパブリッシャ
-    def motor_cont_simu(self, left_hz, right_hz):
-        d = MotorFreqs()
-        d.left_hz = left_hz
-        d.right_hz = right_hz
-        self.motor_raw_pub.publish(d)
+    # （シミュ）モーターパブリッシャ（速度・旋回に統一したので廃止）
+    # def motor_cont_simu(self, left_hz, right_hz):
+    #     d = MotorFreqs()
+    #     d.left_hz = left_hz
+    #     d.right_hz = right_hz
+    #     self.motor_raw_pub.publish(d)
 
-    # （実機）モーターパブリッシャ
+    # （実機）モーターパブリッシャ（シミュでも利用）
     def motor_cont_act(self, xv, zrot):
         d = Twist()
         d.linear.x  = xv
@@ -69,22 +73,15 @@ class LeftHand():
     # ロボット動作関数　＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
     # 停止
     def move_stop(self):
-        if sim_act == 0:
-            self.motor_cont_simu(0, 0)
+        self.motor_cont_act(0, 0)
 
     # １マス前進
     def move_front(self):
-        if sim_act == 0:
-            self.motor_cont_simu(P_1BLK, P_1BLK) 
-        else:
-            self.motor_cont_act(0.2, 0)
+        self.motor_cont_act(0.2, 0)
 
     # 右旋回
     def move_turnright(self):
-        if sim_act == 0:
-            self.motor_cont_simu(P_QUAD, -P_QUAD)
-        else:
-            self.motor_cont_act(0.0, -math.pi)
+        self.motor_cont_act(0.0, -math.pi)
 
     # 環境設定のための関数　＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
     # シミュレーション環境の初期化
