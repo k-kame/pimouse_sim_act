@@ -14,15 +14,15 @@ from raspimouse_ros_2.msg import *
 # P_1BLK_SIM = 477 # ロボットが１ブロック移動するためのパルス数
 # P_QUAD_SIM = 192 # ロボットが90度旋回するためのパルス数
 V_X_SIM  = 0.2
-Z_R_SIM  = -math.pi
-S_TH_SIM = 300 # 壁の有無を判断するための閾値
+R_Z_SIM  = -math.pi
+S_TH_SIM = 300
 # 実機のための定数
-V_X_ACT  = 0.2
-Z_R_ACT  = -math.pi
-S_TH_ACT = 300
+V_X_ACT  = 0.05
+R_Z_ACT  = -math.pi/4
+S_TH_ACT = 1500
 # 参照される定数（編集しない）
 V_X  = 0
-Z_R  = 0
+R_Z  = 0
 S_TH = 0
 
 class LeftHand():
@@ -35,16 +35,17 @@ class LeftHand():
         # self.motor_raw_pub = rospy.Publisher('/motor_raw', MotorFreqs, queue_size = 10)
         self.cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
 
+
         # グローバル変数の再定義
-        global P_1BLK, P_QUAD, S_TH
-        if sim_act == 0:
-            V_X  = V_X_SIM
-            Z_R  = Z_R_SIM
-            S_TH = S_TH_SIM
-        else:
-            V_X  = V_X_ACT
-            Z_R  = Z_R_ACT
-            S_TH = S_TH_ACT
+        global V_X, R_Z, S_TH
+        # if sim_act == 0:
+        #     V_X  = V_X_SIM
+        #     R_Z  = R_Z_SIM
+        #     S_TH = S_TH_SIM
+        # else:
+        V_X  = V_X_ACT
+        R_Z  = R_Z_ACT
+        S_TH = S_TH_ACT
 
         # （シミュ）シミュレータを初期状態にする
         if sim_act == 0:
@@ -57,11 +58,11 @@ class LeftHand():
         self.sensor_values = msg
 
     # （シミュ）モーターパブリッシャ（速度・旋回に統一したので廃止）
-    # def motor_cont_simu(self, left_hz, right_hz):
-    #     d = MotorFreqs()
-    #     d.left_hz = left_hz
-    #     d.right_hz = right_hz
-    #     self.motor_raw_pub.publish(d)
+    def motor_cont_simu(self, left_hz, right_hz):
+        d = MotorFreqs()
+        d.left_hz = left_hz
+        d.right_hz = right_hz
+        self.motor_raw_pub.publish(d)
 
     # （実機）モーターパブリッシャ（シミュでも利用）
     def motor_cont_act(self, xv, zrot):
@@ -77,11 +78,11 @@ class LeftHand():
 
     # １マス前進
     def move_front(self):
-        self.motor_cont_act(0.2, 0)
+        self.motor_cont_act(V_X, 0)
 
     # 右旋回
     def move_turnright(self):
-        self.motor_cont_act(0.0, -math.pi)
+        self.motor_cont_act(0.0, R_Z)
 
     # 環境設定のための関数　＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
     # シミュレーション環境の初期化
@@ -103,6 +104,9 @@ class LeftHand():
     # 主関数　＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
     def run(self):
         self.rate = rospy.Rate(20)
+
+        rospy.loginfo('hello!')
+
         # シミュレーション環境初期化
         if sim_act == 0:
             self.init_simu()
@@ -112,10 +116,10 @@ class LeftHand():
         # 以下メインループ
         while not rospy.is_shutdown():
             # 計算部（センサ値▶モーター速度）
-            if self.sensor_values.left_forward < S_TH or self.sensor_values.right_forward < S_TH:
-                self.move_front()
-            else:
+            if self.sensor_values.left_forward > S_TH or self.sensor_values.right_forward > S_TH:
                 self.move_turnright()
+            else:
+                self.move_front()
 
             self.rate.sleep()
             # メインループ（ここまで）
