@@ -90,14 +90,14 @@ class LeftHand():
         if self.modeSimReset:
             rospy.wait_for_service('/gazebo/reset_world')
             try: rospy.ServiceProxy('/gazebo/reset_world', Empty).call()
-            except rospy.ServiceException as e: print "Service call failed: %s"%e
+            except rospy.ServiceException as e: print('Service call failed: %s', e)
 
     # ロボット初期化
     def init_robot(self):
         rospy.wait_for_service('/motor_on')
         rospy.wait_for_service('/motor_off')
         try: rospy.ServiceProxy('/motor_on', Trigger).call()
-        except rospy.ServiceException as e: print "Service call failed: %s"%e
+        except rospy.ServiceException as e: print('Service call failed: %s', e)
         # シャットダウンのためのフックを登録
         rospy.on_shutdown(self.move_stop)
 
