@@ -2,5 +2,5 @@
   <include file="$(find pimouse_ros)/launch/pimouse.launch" /> 
   <param name="sim_act" value="1" />
   <!-- <node pkg="pimouse_sim_act" name="wall_around" type="wall_around.py" required="true" /> -->
-  <node pkg="pimouse_sim_act" name="LeftHand" type="left_hand3.py" required="true" />
+  <node pkg="pimouse_sim_act" name="runmouse_base" type="runmouse_base.py" required="true" />
 </launch>
